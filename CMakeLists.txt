@@ -9,9 +9,7 @@ include(FetchContent)
  
 FetchContent_Declare(
   cppjson
-  URL https://github.com/nlohmann/json/archive/refs/tags/v3.10.4.tar.gz
-  # GIT_REPOSITORY https://github.com/nlohmann/json.git
-  # GIT_TAG v3.10.4
+  URL https://github.com/nlohmann/json/archive/refs/tags/v3.11.2.tar.gz
 )
 
 FetchContent_MakeAvailable(cppjson)

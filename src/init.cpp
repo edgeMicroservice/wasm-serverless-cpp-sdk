@@ -10,11 +10,11 @@
 static int64_t rpc_count = 0;
 static std::map<int64_t, mimik::wasm::rpc_callback> rpc_callbacks;
 
-static std::string extract_data(int64_t strAddr, uint32_t strLen);
+static std::vector<uint8_t> extract_data(int64_t strAddr, uint32_t strLen);
 static mimik::wasm::mk_module_event_handler global_module_event_handler;
 
 ////////////////////////////////////////////
-static void mk_module_event_handler(const std::string &jsonrpc) {
+static void mk_module_event_handler(const std::vector<uint8_t> &jsonrpc) {
   auto evt = mimik::wasm::api::request::parse(jsonrpc);
   global_module_event_handler.http_event_callback(evt);
 }
@@ -25,7 +25,7 @@ void mk_module_on_event(int64_t buf, uint32_t len) {
   mk_module_event_handler(json);
 }
 
-void mk_module_abi_version_1_0_0() {}
+void mk_module_abi_version_2_0_0() {}
 
 int32_t WASM_EXPORT mk_module_on_api_response(int64_t sid, int64_t buf,
                                               uint32_t len) {
@@ -52,12 +52,12 @@ int32_t WASM_EXPORT mk_module_on_api_response(int64_t sid, int64_t buf,
 }
 /////////////////// WASM EXPORT END //////////////
 
-static std::string extract_data(int64_t strAddr, uint32_t strLen) {
-  std::vector<char> buf(strLen);
+static std::vector<uint8_t> extract_data(int64_t strAddr, uint32_t strLen) {
+  std::vector<uint8_t> buf(strLen);
 
   mk_module_get_buffer((uint32_t)&buf[0], strAddr, strLen);
 
-  return std::string(&buf[0], strLen);
+  return buf;
 }
 
 int32_t mimik::wasm::rpc::register_callback(rpc_callback callback) {
@@ -67,10 +67,10 @@ int32_t mimik::wasm::rpc::register_callback(rpc_callback callback) {
   return rpc_count;
 }
 
-void mimik::wasm::rpc::call(const std::string &json) {
-  uint8_t *buf = (uint8_t *)json.c_str();
+void mimik::wasm::rpc::call(int32_t id, const std::vector<uint8_t> &json) {
+  const uint8_t *buf = &json[0];
   int32_t len = json.size();
-  mk_module_api_request((uint32_t)buf, len);
+  mk_module_api_request(id, (uint32_t)buf, len);
 }
 
 #if __clang_major__ > 12

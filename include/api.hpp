@@ -37,7 +37,7 @@ using form_request_store_handler =
 
 class request {
  public:
-  static mimik::wasm::model::http_event parse(const std::string& jsonrpc);
+  static mimik::wasm::model::http_event parse(const std::vector<uint8_t>& jsonrpc);
 
   static void handle_form_upload(form_request_found_handler found,
                                  form_request_get_handler get,
@@ -46,8 +46,8 @@ class request {
 
 class response {
  public:
-  static std::string _send(const std::string& data);
-  static std::string _send(const std::string& data,
+  static std::vector<uint8_t> _send(const std::string& data);
+  static std::vector<uint8_t> _send(const std::string& data,
                            const model::http_send_option& option);
 
  public:
@@ -57,7 +57,7 @@ class response {
 
 class httpclient {
  public:
-  static std::string _fetch(int32_t id, const mimik::wasm::model::http_client_option& opt);
+  static std::vector<uint8_t> _fetch(int32_t id, const mimik::wasm::model::http_client_option& opt);
 
  public:
   void fetch(const mimik::wasm::model::http_client_option& opt,
@@ -68,11 +68,11 @@ enum CLUSTER_TYPE { LOCAL = 100, ACCOUNT = 101, PROXIMITY = 102 };
 
 class edge {
  public:
-  static std::string _decrypt(
+  static std::vector<uint8_t>  _decrypt(
       int32_t id,
       const mimik::wasm::model::edge_decrypt_option& opt);
 
-  static std::string _bep(
+  static std::vector<uint8_t> _bep(
       int32_t id,
       const mimik::wasm::model::edge_request_bep_option& opt);
 
