@@ -55,8 +55,8 @@ using rpc_callback_v3 = std::function<int(
     const std::shared_ptr<callback_error>&, const callback_result&)>;
 
 static int64_t register_result_callback(rpc_callback_v2 callback) {
-  auto cb = rpc::register_callback([callback](const std::string& jsonrpc) {
-    auto doc = cppjson::parse(jsonrpc);
+  auto cb = rpc::register_callback([callback](const std::vector<uint8_t>& jsonrpc) {
+    auto doc = cppjson::from_msgpack(jsonrpc);
     auto rpc = doc.get<jsonrpc_function>();
 
     if (rpc.method == "oncallback.success") {
@@ -78,8 +78,8 @@ static int64_t register_result_callback(rpc_callback_v2 callback) {
 }
 
 static int64_t register_result_ret_callback(rpc_callback_v3 callback) {
-  auto cb = rpc::register_callback([callback](const std::string& jsonrpc) {
-    auto doc = cppjson::parse(jsonrpc);
+  auto cb = rpc::register_callback([callback](const std::vector<uint8_t>& jsonrpc) {
+    auto doc = cppjson::from_msgpack(jsonrpc);
     auto rpc = doc.get<jsonrpc_function>();
 
     if (rpc.method == "oncallback.success") {
@@ -98,7 +98,7 @@ static int64_t register_result_ret_callback(rpc_callback_v3 callback) {
   return cb;
 }
 
-static std::string jsonrpcStringify(int32_t id, const std::string& method,
+static std::vector<uint8_t> jsonrpcStringify(int32_t id, const std::string& method,
                                     const nlohmann::json& params) {
   jsonrpc_function rpc;
   rpc.id = id;
@@ -107,13 +107,13 @@ static std::string jsonrpcStringify(int32_t id, const std::string& method,
 
   cppjson jsonrpc = rpc;
 
-  return jsonrpc.dump();
+  return cppjson::to_msgpack(jsonrpc);
 }
 
 callback_error::callback_error(const std::string& message) : message(message) {}
 
-http_event request::parse(const std::string& jsonrpc) {
-  auto doc = cppjson::parse(jsonrpc);
+http_event request::parse(const std::vector<uint8_t>& jsonrpc) {
+  auto doc = cppjson::from_msgpack(jsonrpc);
   auto rpc = doc.get<jsonrpc_function>();
 
   auto request = rpc.params.get<http_event>();
@@ -161,10 +161,10 @@ void request::handle_form_upload(form_request_found_handler found,
   nlohmann::json dummy;
   auto jsonrpc = jsonrpcStringify(id, "request.handle_form_upload", dummy);
 
-  rpc::call(jsonrpc);
+  rpc::call(id, jsonrpc);
 }
 
-std::string response::_send(const std::string& data) {
+std::vector<uint8_t> response::_send(const std::string& data) {
   auto params = cppjson::array();
   params.push_back(data);
 
@@ -172,7 +172,7 @@ std::string response::_send(const std::string& data) {
   return jsonrpcStringify(0, "response.send", params);
 }
 
-std::string response::_send(const std::string& data,
+std::vector<uint8_t> response::_send(const std::string& data,
                             const model::http_send_option& option) {
   auto params = cppjson::array();
   params.push_back(data);
@@ -185,17 +185,17 @@ std::string response::_send(const std::string& data,
 void response::send(const std::string& data) {
   auto jsonrpc = response::_send(data);
 
-  rpc::call(jsonrpc);
+  rpc::call(0, jsonrpc);
 }
 
 void response::send(const std::string& data,
                     const model::http_send_option& option) {
   auto jsonrpc = response::_send(data, option);
 
-  rpc::call(jsonrpc);
+  rpc::call(0, jsonrpc);
 }
 
-std::string httpclient::_fetch(int32_t id, const http_client_option& opt) {
+std::vector<uint8_t> httpclient::_fetch(int32_t id, const http_client_option& opt) {
   return jsonrpcStringify(id, "httpclient.fetch", opt);
 }
 
@@ -207,14 +207,14 @@ void httpclient::fetch(const http_client_option& opt,
 
   auto jsonrpc = httpclient::_fetch(id, opt1);
 
-  rpc::call(jsonrpc);
+  rpc::call(id, jsonrpc);
 }
 
-std::string edge::_decrypt(int32_t id, const edge_decrypt_option& opt) {
+std::vector<uint8_t> edge::_decrypt(int32_t id, const edge_decrypt_option& opt) {
   return jsonrpcStringify(id, "edge.decrypt", opt);
 }
 
-std::string edge::_bep(int32_t id,
+std::vector<uint8_t> edge::_bep(int32_t id,
                        const mimik::wasm::model::edge_request_bep_option& opt) {
   return jsonrpcStringify(id, "edge.request_bep", opt);
 }
@@ -292,7 +292,7 @@ void edge::request_bep(const std::string& token, const std::string& nodeId,
 
         auto jsonrpc = edge::_bep(id, opt);
 
-        rpc::call(jsonrpc);
+        rpc::call(id,jsonrpc);
       });
 }
 
@@ -321,7 +321,7 @@ void edge::decrypt(const CLUSTER_TYPE& aType, const std::string& data,
 
   auto jsonrpc = edge::_decrypt(id, opt);
 
-  rpc::call(jsonrpc);
+  rpc::call(id,jsonrpc);
 }
 
 void storage::get_item(const std::string& key, storage_callback callback) {
@@ -335,7 +335,7 @@ void storage::get_item(const std::string& key, storage_callback callback) {
 
   auto jsonrpc = jsonrpcStringify(id, "storage.get_item", opt);
 
-  rpc::call(jsonrpc);
+  rpc::call(id, jsonrpc);
 }
 
 void storage::set_item(const std::string& key, const std::string& value,
@@ -350,7 +350,7 @@ void storage::set_item(const std::string& key, const std::string& value,
 
   auto jsonrpc = jsonrpcStringify(id, "storage.set_item", opt);
 
-  rpc::call(jsonrpc);
+  rpc::call(id, jsonrpc);
 }
 
 void storage::set_item_with_tag(const std::string& key,
@@ -367,7 +367,7 @@ void storage::set_item_with_tag(const std::string& key,
 
   auto jsonrpc = jsonrpcStringify(id, "storage.set_item_with_tag", opt);
 
-  rpc::call(jsonrpc);
+  rpc::call(id, jsonrpc);
 }
 
 void storage::remove_item(const std::string& key, storage_callback callback) {
@@ -381,7 +381,7 @@ void storage::remove_item(const std::string& key, storage_callback callback) {
 
   auto jsonrpc = jsonrpcStringify(id, "storage.remove_item", opt);
 
-  rpc::call(jsonrpc);
+  rpc::call(id,jsonrpc);
 }
 
 void storage::each_item(storage_each_item_callback callback) {
@@ -400,7 +400,7 @@ void storage::each_item(storage_each_item_callback callback) {
 
   auto jsonrpc = jsonrpcStringify(id, "storage.each_item", opt);
 
-  rpc::call(jsonrpc);
+  rpc::call(id, jsonrpc);
 }
 
 void storage::each_item(const std::string& tag,
@@ -420,5 +420,5 @@ void storage::each_item(const std::string& tag,
 
   auto jsonrpc = jsonrpcStringify(id, "storage.each_item", opt);
 
-  rpc::call(jsonrpc);
+  rpc::call(id, jsonrpc);
 }
