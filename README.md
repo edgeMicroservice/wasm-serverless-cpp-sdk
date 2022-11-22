@@ -10,7 +10,7 @@ Set(FETCHCONTENT_QUIET FALSE)
 
 FetchContent_Declare(
   serverless-sdk
-  GIT_REPOSITORY https://bitbucket.org/mimiktech/wasm-serverless-cpp-sdk.git
+  GIT_REPOSITORY https://github.com/edgeMicroservice/wasm-serverless-cpp-sdk.git
   GIT_TAG ${SDK_TAG}
   GIT_PROGRESS TRUE
 )
