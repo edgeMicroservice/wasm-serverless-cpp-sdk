@@ -55,51 +55,54 @@ using rpc_callback_v3 = std::function<int(
     const std::shared_ptr<callback_error>&, const callback_result&)>;
 
 static int64_t register_result_callback(rpc_callback_v2 callback) {
-  auto cb = rpc::register_callback([callback](const std::vector<uint8_t>& jsonrpc) {
-    auto doc = cppjson::from_msgpack(jsonrpc);
-    auto rpc = doc.get<jsonrpc_function>();
+  auto cb =
+      rpc::register_callback([callback](const std::vector<uint8_t>& jsonrpc) {
+        auto doc = cppjson::from_msgpack(jsonrpc);
+        auto rpc = doc.get<jsonrpc_function>();
 
-    if (rpc.method == "oncallback.success") {
-      callback_result res = rpc.params.at("data");
-      callback({}, res);
-    } else if (rpc.method == "oncallback.error_with_data") {
-      std::string message = rpc.params.at("error").at("message");
-      callback_result res = rpc.params.at("data");
-      callback(std::make_shared<callback_error>(message), res);
-    } else {
-      std::string message = rpc.params.at("error").at("message");
-      callback(std::make_shared<callback_error>(message), {});
-    }
+        if (rpc.method == "oncallback.success") {
+          callback_result res = rpc.params.at("data");
+          callback({}, res);
+        } else if (rpc.method == "oncallback.error_with_data") {
+          std::string message = rpc.params.at("error").at("message");
+          callback_result res = rpc.params.at("data");
+          callback(std::make_shared<callback_error>(message), res);
+        } else {
+          std::string message = rpc.params.at("error").at("message");
+          callback(std::make_shared<callback_error>(message), {});
+        }
 
-    return 0;
-  });
+        return 0;
+      });
 
   return cb;
 }
 
 static int64_t register_result_ret_callback(rpc_callback_v3 callback) {
-  auto cb = rpc::register_callback([callback](const std::vector<uint8_t>& jsonrpc) {
-    auto doc = cppjson::from_msgpack(jsonrpc);
-    auto rpc = doc.get<jsonrpc_function>();
+  auto cb =
+      rpc::register_callback([callback](const std::vector<uint8_t>& jsonrpc) {
+        auto doc = cppjson::from_msgpack(jsonrpc);
+        auto rpc = doc.get<jsonrpc_function>();
 
-    if (rpc.method == "oncallback.success") {
-      callback_result res = rpc.params.at("data");
-      return callback({}, res);
-    } else if (rpc.method == "oncallback.error_with_data") {
-      std::string message = rpc.params.at("error").at("message");
-      callback_result res = rpc.params.at("data");
-      return callback(std::make_shared<callback_error>(message), res);
-    } else {
-      std::string message = rpc.params.at("error").at("message");
-      return callback(std::make_shared<callback_error>(message), {});
-    }
-  });
+        if (rpc.method == "oncallback.success") {
+          callback_result res = rpc.params.at("data");
+          return callback({}, res);
+        } else if (rpc.method == "oncallback.error_with_data") {
+          std::string message = rpc.params.at("error").at("message");
+          callback_result res = rpc.params.at("data");
+          return callback(std::make_shared<callback_error>(message), res);
+        } else {
+          std::string message = rpc.params.at("error").at("message");
+          return callback(std::make_shared<callback_error>(message), {});
+        }
+      });
 
   return cb;
 }
 
-static std::vector<uint8_t> jsonrpcStringify(int32_t id, const std::string& method,
-                                    const nlohmann::json& params) {
+static std::vector<uint8_t> jsonrpcStringify(int32_t id,
+                                             const std::string& method,
+                                             const nlohmann::json& params) {
   jsonrpc_function rpc;
   rpc.id = id;
   rpc.method = method;
@@ -173,7 +176,7 @@ std::vector<uint8_t> response::_send(const std::string& data) {
 }
 
 std::vector<uint8_t> response::_send(const std::string& data,
-                            const model::http_send_option& option) {
+                                     const model::http_send_option& option) {
   auto params = cppjson::array();
   params.push_back(data);
   params.push_back(option);
@@ -195,7 +198,8 @@ void response::send(const std::string& data,
   rpc::call(0, jsonrpc);
 }
 
-std::vector<uint8_t> httpclient::_fetch(int32_t id, const http_client_option& opt) {
+std::vector<uint8_t> httpclient::_fetch(int32_t id,
+                                        const http_client_option& opt) {
   return jsonrpcStringify(id, "httpclient.fetch", opt);
 }
 
@@ -210,12 +214,13 @@ void httpclient::fetch(const http_client_option& opt,
   rpc::call(id, jsonrpc);
 }
 
-std::vector<uint8_t> edge::_decrypt(int32_t id, const edge_decrypt_option& opt) {
+std::vector<uint8_t> edge::_decrypt(int32_t id,
+                                    const edge_decrypt_option& opt) {
   return jsonrpcStringify(id, "edge.decrypt", opt);
 }
 
-std::vector<uint8_t> edge::_bep(int32_t id,
-                       const mimik::wasm::model::edge_request_bep_option& opt) {
+std::vector<uint8_t> edge::_bep(
+    int32_t id, const mimik::wasm::model::edge_request_bep_option& opt) {
   return jsonrpcStringify(id, "edge.request_bep", opt);
 }
 
@@ -292,7 +297,7 @@ void edge::request_bep(const std::string& token, const std::string& nodeId,
 
         auto jsonrpc = edge::_bep(id, opt);
 
-        rpc::call(id,jsonrpc);
+        rpc::call(id, jsonrpc);
       });
 }
 
@@ -321,7 +326,7 @@ void edge::decrypt(const CLUSTER_TYPE& aType, const std::string& data,
 
   auto jsonrpc = edge::_decrypt(id, opt);
 
-  rpc::call(id,jsonrpc);
+  rpc::call(id, jsonrpc);
 }
 
 void storage::get_item(const std::string& key, storage_callback callback) {
@@ -381,7 +386,7 @@ void storage::remove_item(const std::string& key, storage_callback callback) {
 
   auto jsonrpc = jsonrpcStringify(id, "storage.remove_item", opt);
 
-  rpc::call(id,jsonrpc);
+  rpc::call(id, jsonrpc);
 }
 
 void storage::each_item(storage_each_item_callback callback) {
@@ -421,4 +426,15 @@ void storage::each_item(const std::string& tag,
   auto jsonrpc = jsonrpcStringify(id, "storage.each_item", opt);
 
   rpc::call(id, jsonrpc);
+}
+
+void WebSocketBroker::publish(const std::string& type,
+                              const std::string& message) {
+  auto params = cppjson::array();
+  params.push_back(type);
+  params.push_back(message);
+
+  auto jsonrpc = jsonrpcStringify(0, "websocket_broker.publish", params);
+
+  rpc::call(0, jsonrpc);
 }
