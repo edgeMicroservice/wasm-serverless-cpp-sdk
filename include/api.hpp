@@ -98,6 +98,11 @@ class storage {
   void each_item(const std::string& tag, storage_each_item_callback callback);
 };
 
+class WebSocketBroker{
+  public:
+    void publish(const std::string& type, const std::string& message);
+};
+
 }  // namespace api
 }  // namespace wasm
 }  // namespace mimik
