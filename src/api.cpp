@@ -1,6 +1,7 @@
 #include "init.hpp"
 #include "api.hpp"
 
+#define HMAC_EXPIRY_SEC   6333333333
 using cppjson = nlohmann::json;
 
 namespace mimik {
@@ -226,10 +227,7 @@ std::vector<uint8_t> edge::_bep(
 
 void edge::request_bep(const std::string& token, const std::string& nodeId,
                        int httpPort, edge_function_callback callback) {
-  long long expireAt = std::chrono::duration_cast<std::chrono::seconds>(
-                           std::chrono::system_clock::now().time_since_epoch())
-                           .count() +
-                       10 * 60;  // 10 min from now;
+  long long expireAt = HMAC_EXPIRY_SEC;
 
   std::string expiry = std::to_string(expireAt);
 
